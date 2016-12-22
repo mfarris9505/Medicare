@@ -116,7 +116,7 @@ choro_pov
 ```
 
 
-As you can see from the above graphic, the hospitals are not evenly sparsed across the counties, and in fact you can see that even outside New York City, the hospital tend to bunch along easily accessible routes and cities. This makes any comparision with poverty rates in the surround arreas difficult, so for our purposes here we shifted away from socioeconomic indicators and moved towards medicare's own standards. 
+As you can see from the above graphic, the hospitals are not evenly sparsed across the counties, and in fact you can see that even outside New York City, the hospital tend to bunch along easily accessible routes and cities. This makes any comparision with poverty rates in the surround areas difficult, so for our purposes here we shifted away from socioeconomic indicators and moved towards medicare's own standards. 
 
 
 **Payment vs. Indicators**
@@ -166,32 +166,33 @@ abline(fit)
 ## Modeling
 
 ### Readmissions and Medicare
-Our primary goal here is to create a uniform model for Readmission Services. The Medicare Readmission Reduction act of [INSERT DATE HERE], was Medicare's attempt to reduce cost. "THIS NEEDS A CITATION" The result of this act was that most insurance companies adopted a "No 30 Day Readmission for the same DRG" policy. This means, that irregardless of necessity of service, the insurance company would not pay for the 2nd admission, and that the hospital is responsible for combining the bill into one "combined admission." The idea behind this, is that the hospital did not provide the necessary care in the first admission to adequately "heal" the patient. Though, not necessarily a new idea, with the Federal Act in place, this finally game insurance companies grounds to increase profitablity at the expensive of the Hosptial. It is this idea that we will attempt to model, and we are going to focus on 2 specific diagnosis that are by far the most common readmissions. These diagnosis are Heart Failure and COPD (Chronic obstructive pulmonary disorder). There has been many studies on these two disorders specifically, most of which point to the chronic nature of the disorders (ie. prevent readmissions is impossible), however, in a changing environment Hospitals must learn to adapt, and one possible avenue to prevent readmissions revolves around another Medicare push: OVservation.
+Our primary goal here is to create a uniform model for Readmission Services. The Medicare Readmission Reduction Act of 2012, was Medicare's attempt to reduce cost.[7] The result of this act was that most insurance companies adopted a "No 30 Day Readmission for the same DRG" policy. This means, that irregardless of necessity of service, the insurance company would not pay for the 2nd admission, and that the hospital is responsible for combining the bill into one "combined admission." The idea behind this, is that the hospital did not provide the necessary care in the first admission to adequately "heal" the patient. Though, not necessarily a new idea, with the Federal Act in place, this finally gave insurance companies grounds to increase profitablity at the expensive of the Hosptial. It is this idea that we will attempt to model, and we are going to focus on 2 specific diagnosis that are by far the most common readmissions. These diagnosis are Heart Failure and COPD (Chronic obstructive pulmonary disorder). There has been many studies on these two disorders specifically, most of which point to the chronic nature of the disorders (ie. preventing readmissions is impossible), however, in a changing environment Hospitals must learn to adapt, and one possible avenue to prevent readmissions revolves around another Medicare push: OVservation.
 
 ### Observation 
 
-Observation is a separate status from ED and Inpatient. For the most part, observation acts as an intermediate level of care, an "in between." Observation is meant for short-stay hospital visits, those that are just too long for a patient to remain in the ED, but too short to be fully admitted into the hospital. Though the care that is provided is expected to be the same as an inpatient stay, the payment is vastly different.
+Observation is a separate status from ED and Inpatient. For the most part, observation acts as an intermediate level of care, an "in between." Observation is meant for short-stay hospital visits, those that are just too long for a patient to remain in the ED, but too short to be fully admitted into the hospital. Though the care that is provided is expected to be the same as an inpatient stay, the payment is vastly different.[1]
 
-Though the exact payment for observation level of care can very tremendously, and all depends on careful billing and documentation guidelines. With the new OPPS Prospective billing, medicare now created a starting packaged rate of $2,200 dollars. This does not reflect the entirety of payments (ie. ED services, which can be billed separately unlike in inpatient were these services packaged together). For simplicity sake, we are going to assume that observation pays roughly $3000, which is hypothetically correct (ED visits usually cost around $800-$1000) 
+Though the exact payment for observation level of care can very tremendously, and all depends on careful billing and documentation guidelines. With the new OPPS Prospective billing, medicare now created a starting packaged rate of $2,200[1] dollars. This does not reflect the entirety of payments (ie. ED services, which can be billed separately unlike in inpatient were these services packaged together). For simplicity sake, we are going to assume that observation pays roughly $3000, which is hypothetically correct (ED visits usually cost around $800-$1000) [1]
 
 Why do you ask is observation important? Because now hospitals have a decision to make, whether or not to admit as an inpatient, and risk the readmission, or observe the patient in observation, and forgo any penalties. 
 Below we created a generic decision tree, that highlights a hospitals choices:
 
 ![Hospital Readmission Hypothetical](pics/tree_hypo.png)
 
-As you can see the red boxes represents the hospitals decisions while the Yellow circles represent the probability that a patient will be readmit. At each step, we see the prospective payoff, and as you can see from the solved payoff data, the best choice for hospitals resulting in the highest payoff would be to first 
+As you can see the red boxes represents the hospitals decisions while the Yellow circles represent the probability that a patient will be readmit. At each step, we see the prospective payoff, and as you can see from the solved payoff data, the best choice for hospitals resulting in the highest payoff would be to first admit to inpatient, and for any patient that comes in before the 30 day time-frame, to put them under observation. 
 
-From out data, we know that in the state of NY the mean payment and readmission rate for HF and COPD are:
+However, this is not entirely feasible, especially given the nature of Medicare and insurance companies. Insurance companies now review case concurrently, and if a case doesn't meet criteria for admission, or is a readmission, they can deny a claim. This means that for those cases that are boardline, there will be a cost for hospitals other than just taking a hit for readmissions. So, what we wanted to see, is the potential for decrease in payment given various "chances" of observations. For instance, how much of a decrease in payment will we see if we admit 90% to inpatient vs 75% or 60%? Will our overall payments drop dramatically? So, we changed our decision tree to look like this: 
 
-Heart Failure:
+![Hospital Readmission Hypothetical](pics/tree_copd.png)
 
-```{r}
-#hf_ream<- aggregate(ny_hf$Average.Medicare.Payments, mean)
 
-```
-## Decision Tree Modelling: 
+and this:
 
-Now that their are two models for readmission rates and payments, it is time to run simulations on the real world data. From ou
+![Hospital Readmission Hypothetical](pics/tree_hf.png)
+
+Now, we no longer consider the "decision" to admit as yes or no, but as a probablity. And this emulates more accurately real world scenarios. A doctor will likely see a patient, and "choose" to admit based on his clinical judgement. Not all patients will be admitted. But if we were to tell doctors to try and observe more patients at a lower status, will we be able to avoid the readmission pitfall?
+
+To find out the above model was simulated over all the New York hospitals, with 100 "patients" as our test subjects. Using  each hospitals own readmission rate and Average Payment as a standard, a model was created and simulated. The below code is that mock up:
 
 ```{r}
 library(ggplot2)
@@ -238,6 +239,11 @@ model_hosp <- function(dat_frame,obs,obs_prop,readm_prop){
 
   return(payments)
 }
+```
+
+
+The above model was then run according to the precentage of observation vists, with increasing numbers, and then the average payment per hospital was generated over each trial. A box plot of the average payment is given as: 
+```{r}
 Prob_05 <- model_hosp(ny_copd,3000,.05,.25)
 Prob_10 <- model_hosp(ny_copd,3000,.10,.25)
 Prob_15 <- model_hosp(ny_copd,3000,.15,.25)
@@ -254,7 +260,9 @@ p1 <- ggplot(stack(copd_prob), aes(x = ind, y = values)) +
   ylab("Payment")
 p1
 ``` 
-From the above graph we can see 
+From the above graph we can see that indeed there is a decrease in payment the more that observation is implemented in regards to readmissions. However, the decrease is not as signicant as one may expect.
+
+Again we plotted the same data with Heart Failure: 
 ```{r}
 Prob_05 <- model_hosp(ny_hf,3000,.05,.25)
 Prob_10 <- model_hosp(ny_hf,3000,.10,.25)
@@ -273,11 +281,33 @@ p1 <- ggplot(stack(hf_prob), aes(x = ind, y = values)) +
 p1
 
 ```
+And we again see that there is a cost to using observation more frequently, but when it comes to readmissions, the cost may out weigh the benefits. Taking this one step further, we found the average at each percentage and compared the two: 
 
+```{r}
+library(ggplot2)
+library(reshape2)
+hf_means<- colMeans(hf_prob)
+copd_means<- colMeans(copd_prob)
+
+prob<-c(5,10,15,20,25,30,40)
+
+hf_means <- melt(hf_means)
+copd_means <- melt(copd_means)
+
+comb_means <- data.frame(prob,hf_means,copd_means)
+colnames(comb_means) <- c("Prob", "HF","COPD")
+
+ggplot(comb_means, aes(prob)) + 
+  geom_point(aes(y = HF, colour = "HF")) + 
+  geom_point(aes(y = COPD, colour = "COPD"))+
+  ggtitle("Payment Vs Observation Prob")+
+  ylab("Payment")
+  
+```
 
 Results: 
 
-From the modeling experiment, we determined that though observation could potential 
+From the modeling experiment, it has been determined that the current system, admitting to inpatient, is the most profitable for hospitals. However, with the changes in Medicare reimbursement, and with the onslaught of denials and taking back payments, Observation appears to be a viable strategy. As of now, there are no limitations to the number of observation stays that a hospital can bill, there is no regulation regarding reviews being done concurrently in the hospitals, these stays are being paid for in full, and the hospital doesn't have to worry about future audits. However, by taking the less payment upfront, it can be seen in the graph above, that indeed, the hospital is limiting their potential payment. They will not be able to recoup up enough upfront, but they are likely to avoid a lot of pitfalls. 
 
 
 ## References: 

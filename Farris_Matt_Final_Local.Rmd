@@ -4,13 +4,12 @@ author: "Matthew Farris"
 date: "December 18, 2016"
 output:
   pdf_document: default
-  html_document: default
 ---
 
 Data Foreward: 
 Included is the code utilized for data collection and extraction, however, a comprehensive analysis is not peformed as we are proceeding more with hypothetical scenarios and our focus in this class is not data tidying. Please see the comments listed in the data acquistion
 
-```{r echo=FALSE}
+```{r}
 library(RCurl)
 library(plyr)
 #url <- "https://raw.githubusercontent.com/mfarris9505/Medicare/master/data/IPPS_All_DRG.csv"
@@ -129,23 +128,42 @@ The last part to our proposal was building of a model to better understand Medic
 
 ## Data Collection:
 
-For our data collection, our primary source of data came from Medicare.Data.Gov[Reference 3,4,5].  and furthermore, we have collected some poverty rates from [INSERT CITATION]. As the poverty rates were not the primary focus of this project, we will not include a detailed description of the data source used. 
+For our data collection, our primary source of data came from Medicare.Data.Gov[Reference 3,4,5].  and furthermore, we have collected some poverty rates from the Department of Agriculture [3]. As the poverty rates were not the primary focus of this project, we will not include a detailed description of the data source used. 
 
-However, the primary data sources we used: 
+However, the primary data sources we used was from CMS, or the Center For Medicare and Medicaid services. This is the governing agency for medicare, and upholds all of the federal regulations for medicare. Furthermore, CMS releases set payments for procedures, designates which procedures are inpatient, and provides diagnostic groups. The dataset used were: 
+
+* Hospital General Information[5]
+* Readmissions and Deaths - Hospital [5]
+* IPPS Provider Summmary for all DRG - FY2014  [6]
+
+The above data was cleaned and combined using R's join functions. Please see above code for more details.
 
 
-## Readmission Rates
+## Data Analysis
+
+For the first part of this project, it seemed apprarent that we analyze some of the data that Medicare had to offer, what we found to be interesting was that the data appears to show a tendency for hospitals with higher readmissions rates, getting paid more. The below graphs show this:
 ```{r}
 fit<-lm(ny_hf$READM ~ ny_hf$Average.Medicare.Payments)
 
 plot(ny_hf$Average.Medicare.Payments,ny_hf$READM, 
-     main = "Readmission vs Payment",
+     main = "Readmission vs Payment for Heart Failure",
      xlab = "Payments", 
      ylab = "Readmission")
 abline(fit)
 ```
 
-## Modelling
+```{r}
+fit<-lm(ny_copd$READM ~ ny_copd$Average.Medicare.Payments)
+
+plot(ny_copd$Average.Medicare.Payments,ny_copd$READM, 
+     main = "Readmission vs Payment for COPD",
+     xlab = "Payments", 
+     ylab = "Readmission")
+abline(fit)
+```
+
+
+## Modeling
 
 ### Readmissions and Medicare
 Our primary goal here is to create a uniform model for Readmission Services. The Medicare Readmission Reduction act of [INSERT DATE HERE], was Medicare's attempt to reduce cost. "THIS NEEDS A CITATION" The result of this act was that most insurance companies adopted a "No 30 Day Readmission for the same DRG" policy. This means, that irregardless of necessity of service, the insurance company would not pay for the 2nd admission, and that the hospital is responsible for combining the bill into one "combined admission." The idea behind this, is that the hospital did not provide the necessary care in the first admission to adequately "heal" the patient. Though, not necessarily a new idea, with the Federal Act in place, this finally game insurance companies grounds to increase profitablity at the expensive of the Hosptial. It is this idea that we will attempt to model, and we are going to focus on 2 specific diagnosis that are by far the most common readmissions. These diagnosis are Heart Failure and COPD (Chronic obstructive pulmonary disorder). There has been many studies on these two disorders specifically, most of which point to the chronic nature of the disorders (ie. prevent readmissions is impossible), however, in a changing environment Hospitals must learn to adapt, and one possible avenue to prevent readmissions revolves around another Medicare push: OVservation.
@@ -176,6 +194,7 @@ Heart Failure:
 Now that their are two models for readmission rates and payments, it is time to run simulations on the real world data. From ou
 
 ```{r}
+library(ggplot2)
 model_hosp <- function(dat_frame,obs,obs_prop,readm_prop){
   payments <- c()
   readmission <- c()
@@ -203,7 +222,7 @@ model_hosp <- function(dat_frame,obs,obs_prop,readm_prop){
         payment <-dat_frame[i,"Average.Medicare.Payments"]
         if((readm_1 == TRUE) & (obs_2 ==TRUE)){
           payment<- payment + obs
-          readm_num <- 1
+          readm_=num <- 1
         }else if((readm_1 == TRUE) & (obs_2 ==FALSE)){
           readm_num <- 1
         }
@@ -216,22 +235,69 @@ model_hosp <- function(dat_frame,obs,obs_prop,readm_prop){
     payments <- append(payments, pay)
     readmission <- append(readmission,readm)
   }
-  results <- data.frame(payments,readmission)
-  return(results)
+
+  return(payments)
 }
-Prob_5 <- model_hosp(ny_copd,3000,.5,.25)
+Prob_05 <- model_hosp(ny_copd,3000,.05,.25)
 Prob_10 <- model_hosp(ny_copd,3000,.10,.25)
 Prob_15 <- model_hosp(ny_copd,3000,.15,.25)
 Prob_20 <- model_hosp(ny_copd,3000,.20,.25)
 Prob_25 <- model_hosp(ny_copd,3000,.25,.25)
 Prob_30 <- model_hosp(ny_copd,3000,.30,.25)
 Prob_40 <- model_hosp(ny_copd,3000,.40,.25)
+
+copd_prob <- data.frame(Prob_05,Prob_10,Prob_15,Prob_20,Prob_25,Prob_30,Prob_40)
+p1 <- ggplot(stack(copd_prob), aes(x = ind, y = values)) +
+  geom_boxplot()+
+  ggtitle("COPD Payments vs. Observation Probability ")+
+  xlab("Observation Precentages")+
+  ylab("Payment")
+p1
 ``` 
-## Referrences: 
+From the above graph we can see 
+```{r}
+Prob_05 <- model_hosp(ny_hf,3000,.05,.25)
+Prob_10 <- model_hosp(ny_hf,3000,.10,.25)
+Prob_15 <- model_hosp(ny_hf,3000,.15,.25)
+Prob_20 <- model_hosp(ny_hf,3000,.20,.25)
+Prob_25 <- model_hosp(ny_hf,3000,.25,.25)
+Prob_30 <- model_hosp(ny_hf,3000,.30,.25)
+Prob_40 <- model_hosp(ny_hf,3000,.40,.25)
+
+hf_prob <- data.frame(Prob_05,Prob_10,Prob_15,Prob_20,Prob_25,Prob_30,Prob_40)
+p1 <- ggplot(stack(hf_prob), aes(x = ind, y = values)) +
+  geom_boxplot()+
+  ggtitle("HF Payments vs. Observation Probability ")+
+  xlab("Observation Precentages")+
+  ylab("Payment")
+p1
+
+```
+
+
+Results: 
+
+From the modeling experiment, we determined that though observation could potential 
+
+
+## References: 
 
 [1]Wiler, J. L., Ross, M. A. and Ginde, A. A. (2011), "National Study of Emergency Department Observation Services." Academic Emergency Medicine, 18: 959-965. doi:10.1111/j.1553-2712.2011.01151.x http://onlinelibrary.wiley.com/doi/10.1111/j.1553-2712.2011.01151.x/full
 
 [2]McKenzie D.A, CAE,"Observation Care Payments to Hospitals FAQ" American College of Emergency Physicians(ACEP) Updated:04/29/2016
 https://www.acep.org/Clinical---Practice-Management/Observation-Care-Payments-to-Hospitals-FAQ/
 
-[3]
+[3]Parker, T. "County-level Data Sets" US Dept. of Agriculture: Economic Research Studies Updated: 02/03/2015
+https://www.ers.usda.gov/data-products.aspx
+
+[4] Renner, R."HUD USPS ZIP Code Crosswalk Files" Office of Policy Development and Research. 
+https://www.huduser.gov/portal/datasets/usps_crosswalk.html#codebook
+
+[5]"Hospital Compare Datasets". Centers for Medicare & Medicaid Services. Updated 10/19/2016
+https://data.medicare.gov/data/hospital-compare
+
+[6] "Inpatient Prospective Payment System (IPPS) Provider Summary for All Diagnosis-Related Groups (DRG) - FY2014" Centers for Medicare & Medicaid Services Updated Updated: 6/23/2016
+https://data.cms.gov/Public-Use-Files/Inpatient-Prospective-Payment-System-IPPS-Provider/9zmi-76w9
+
+[7] "Readmissions Reduction Program (HRRP)" Center For Medicare and Medicaid Services. Updated: 04/18/2016 
+https://www.cms.gov/medicare/medicare-fee-for-service-payment/acuteinpatientpps/readmissions-reduction-program.html

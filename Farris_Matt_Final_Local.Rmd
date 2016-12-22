@@ -3,12 +3,12 @@ title: 'Medicare: A look at the Largest Single Payer System in the United States
 author: "Matthew Farris"
 date: "December 18, 2016"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 Data Foreward: 
-Included is the code utilized for data collection and extraction, however it is hidden in the pdf. Please see markdown for data code and summary of analysis.
+Included is the code utilized for data collection and extraction, however, a comprehensive analysis is not peformed as we are proceeding more with hypothetical scenarios and our focus in this class is not data tidying. Please see the comments listed in the data acquistion
 
 ```{r echo=FALSE}
 library(RCurl)
@@ -16,15 +16,14 @@ library(plyr)
 #url <- "https://raw.githubusercontent.com/mfarris9505/Medicare/master/data/IPPS_All_DRG.csv"
 #dat <- getURL(url, ssl.verifypeer=0L, followlocation=1L)
 #dat <- read.csv(text=dat)
-
-all_drg <- read.csv("IPPS_All_DRG.csv")
+setwd("C:/Users/MOM/Documents/GitHub/Medicare")
+all_drg <- read.csv("data/IPPS_All_DRG.csv")
 all_drg <-data.frame(all_drg)
 ny_all_drg <- subset(all_drg, Provider.State == "NY")
 
 #Poverty Info: 
 # This is the data set extracted from the Poverty Rate Dataset
-setwd("C:/Users/Matthew/Downloads/FINAL609")
-ny_pov_14 <- read.csv("NYPov2014.csv")
+ny_pov_14 <- read.csv("data/NYPov2014.csv")
 #Basic Clean up, keeping only County and Poverty Rate
 col_keep <- c("fips2", "county2", "total_est_pct3")
 ny_pov_14<- ny_pov_14[,col_keep]
@@ -35,7 +34,7 @@ colnames(reg_pov) <- c("region","County","value")
 
 #FIPS to ZIP crosswalk
 #Used to turn ZIp code into County(For Poverty Rates)
-zip_fips <- read.csv("ZIP_FIPS.csv")
+zip_fips <- read.csv("data/ZIP_FIPS.csv")
 colnames(zip_fips) <- c("Provider.Zip.Code","FIPS")
 
 #Join Poverty Rates to Data file: 
@@ -48,7 +47,7 @@ ny_agg <- aggregate(Average.Medicare.Payments ~ Provider.Id , ny_all_drg, mean)
 #dat <- getURL(url, ssl.verifypeer=0L, followlocation=1L)
 #dat <- read.csv(text=dat)
 
-hosp_info <- read.csv("Hosp_Info.csv")
+hosp_info <- read.csv("data/Hosp_Info.csv")
 hosp_info <-data.frame(hosp_info)
 ny_hosp_info <- subset(hosp_info, State == "NY")
 
@@ -67,7 +66,7 @@ ny_hosp_info <- na.omit(ny_hosp_info)
 colnames(ny_hosp_info) <-c("Provider.ID", "Lat", "Long", "Payment")
 
 #Readm/Mort Data
-ny_readm_mort <- read.csv("NYData.csv")
+ny_readm_mort <- read.csv("data/NYData.csv")
 ny_readm_mort$READM <- as.numeric(as.character(ny_readm_mort$READM))
 
 #Subseting data by Heart Failure 
@@ -104,14 +103,17 @@ In our proposal we divided up the project into 3 categories:
 
 Our first proposal was to do a detailed analysis of poverty rates vs. payments however, as visiualized in the below graphic: 
 ```{r}
-#Map
-#library(choroplethr)
-#library(ggplot2) 
-#choro_pov = county_choropleth(reg_pov, state_zoom="new york", num_colors=5) + 
-#  ggtitle("New York Counties\n Poverty Rate 2014") +
-#  geom_point(aes(Long, Lat, size = Payment, group = NULL), data=ny_hosp_info, alpha = I(0.3))+
-#  coord_map()
+Map
+library(choroplethr)
+library(ggplot2) 
+choro_pov = county_choropleth(reg_pov, state_zoom="new york", num_colors=5) + 
+  ggtitle("New York Counties\n Poverty Rate 2014") +
+  geom_point(aes(Long, Lat, size = Payment, group = NULL), 
+             data=ny_hosp_info, 
+             alpha = I(0.3))+
+  coord_map()
 
+choro_pov
 ```
 
 
@@ -157,6 +159,7 @@ Though the exact payment for observation level of care can very tremendously, an
 Why do you ask is observation important? Because now hospitals have a decision to make, whether or not to admit as an inpatient, and risk the readmission, or observe the patient in observation, and forgo any penalties. 
 Below we created a generic decision tree, that highlights a hospitals choices:
 
+![Hospital Readmission Hypothetical](pics/tree_hypo.png)
 
 As you can see the red boxes represents the hospitals decisions while the Yellow circles represent the probability that a patient will be readmit. At each step, we see the prospective payoff, and as you can see from the solved payoff data, the best choice for hospitals resulting in the highest payoff would be to first 
 
@@ -216,9 +219,13 @@ model_hosp <- function(dat_frame,obs,obs_prop,readm_prop){
   results <- data.frame(payments,readmission)
   return(results)
 }
-
-model_hosp(ny_copd,3000,.23,.25)
-
+Prob_5 <- model_hosp(ny_copd,3000,.5,.25)
+Prob_10 <- model_hosp(ny_copd,3000,.10,.25)
+Prob_15 <- model_hosp(ny_copd,3000,.15,.25)
+Prob_20 <- model_hosp(ny_copd,3000,.20,.25)
+Prob_25 <- model_hosp(ny_copd,3000,.25,.25)
+Prob_30 <- model_hosp(ny_copd,3000,.30,.25)
+Prob_40 <- model_hosp(ny_copd,3000,.40,.25)
 ``` 
 ## Referrences: 
 
